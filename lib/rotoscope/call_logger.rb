@@ -58,6 +58,9 @@ class Rotoscope
       @pid = Process.pid
       @thread = Thread.current
 
+      @pre_files = Set.new()
+      @pre_test_file = nil
+
       @files = Set.new()
       @test_file = nil
 
@@ -89,9 +92,8 @@ class Rotoscope
 
     def process_files()
       if @files.length > 0 && !@test_file.nil?
-        printFilesSet()
+        printFilesSet(@files, @test_file)
         # Reset state
-        @test_file = nil
         @files = Set.new()
       end
     end
@@ -103,6 +105,10 @@ class Rotoscope
         @rotoscope.stop_trace
       end
       if @pid == Process.pid && @thread == Thread.current
+        # If this is the case, this is the first test being marked
+        if @test_file.nil?
+          printFilesSet(@pre_files, @pre_test_file)
+        end
         # Only output once a new file is being run
         if message != @test_file
           # This will process files and reset state
@@ -115,15 +121,15 @@ class Rotoscope
       @rotoscope.start_trace if was_tracing
     end
 
-    def printFilesSet()
-      @files.each do |file|
+    def printFilesSet(files, test_file)
+      files.each do |file|
         # pattern = /(\'|\"|\.|\*|\/|\-|\\)/
         # test_file = @test_file.gsub(pattern){|match|"\\"  + match}.gsub("\n", "") # \\n
         buffer = @output_buffer
         buffer.clear
         buffer <<
           '"' << file << '",' \
-            '"' << @test_file.to_s << '"' << "\n"
+            '"' << test_file.to_s << '"' << "\n"
         io.write(buffer)
       end
     end
@@ -178,11 +184,24 @@ class Rotoscope
           << caller_method_level << "\n"
         io.write(buffer)
       else
-        if !prefix_to_exclude.nil?
-          caller_path = caller_path.sub(Regexp.new(prefix_to_exclude), "")
-        end
-        if @pid == Process.pid && @thread == Thread.current && !@test_file.nil?
-          @files.add(caller_path)
+        # Still have not encountered the first test, this is the initial load
+        if @test_file.nil?
+          if call.caller_path.include?("_spec.rb")
+            if @pre_test_file.nil?
+              @pre_test_file = call.caller_path
+            end
+          else
+            if !@pre_test_file.nil?
+              @pre_files.add(call.caller_path)
+            end
+          end
+        else
+          if !prefix_to_exclude.nil?
+            caller_path = caller_path.sub(Regexp.new(prefix_to_exclude), "")
+          end
+          if @pid == Process.pid && @thread == Thread.current && !@test_file.nil?
+            @files.add(caller_path)
+          end
         end
       end
     end
