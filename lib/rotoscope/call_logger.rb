@@ -189,9 +189,8 @@ class Rotoscope
           caller_path = caller_path.sub(Regexp.new(prefix_to_exclude), "")
         end
         if @pid == Process.pid && @thread == Thread.current && !@test_file.nil?
-          if @test_file == "./spec/shared/lib/braze/msg_pipeline/checks/user_is_within_rate_limit_spec.rb"
-            puts "##### Adding #{caller_path}"
-            puts "#### #{call.inspect}"
+          if caller_path == "/dashboard/domains/dispatch_rate_limiting/private/braze/msg_pipeline/dispatch_features/rate_limiting.rb"
+            puts "##### Adding #{caller_path} for #{@test_file}"
           end
           @files.add(caller_path)
         end
