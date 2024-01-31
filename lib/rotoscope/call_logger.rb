@@ -97,6 +97,9 @@ class Rotoscope
     end
 
     def mark(message = "")
+      if message == "./spec/shared/lib/braze/msg_pipeline/checks/user_is_within_rate_limit_spec.rb"
+        puts "Marking ./spec/shared/lib/braze/msg_pipeline/checks/user_is_within_rate_limit_spec.rb"
+      end
       was_tracing = @rotoscope.tracing?
       if was_tracing
         # stop tracing to avoid logging these io method calls
@@ -116,6 +119,10 @@ class Rotoscope
     end
 
     def printFilesSet()
+      if @test_file == "./spec/shared/lib/braze/msg_pipeline/checks/user_is_within_rate_limit_spec.rb"
+        puts "##### Number of files for user_is_within_rate_limit_spec.rb: #{@files.size}"
+        puts "##### Files: \n#{@files.join("\n")}"
+      end
       @files.each do |file|
         # pattern = /(\'|\"|\.|\*|\/|\-|\\)/
         # test_file = @test_file.gsub(pattern){|match|"\\"  + match}.gsub("\n", "") # \\n
@@ -182,6 +189,10 @@ class Rotoscope
           caller_path = caller_path.sub(Regexp.new(prefix_to_exclude), "")
         end
         if @pid == Process.pid && @thread == Thread.current && !@test_file.nil?
+          if @test_file == "./spec/shared/lib/braze/msg_pipeline/checks/user_is_within_rate_limit_spec.rb"
+            puts "##### Adding #{caller_path}"
+            puts "#### #{call.inspect}"
+          end
           @files.add(caller_path)
         end
       end
