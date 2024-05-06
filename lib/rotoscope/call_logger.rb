@@ -150,11 +150,13 @@ class Rotoscope
     def log_call(call)
       caller_path = call.caller_path || ""
       if excludelist.match?(caller_path)
-        puts "Excluding #{caller_path} since it is in the exclude path"
+        # puts "Excluding #{caller_path} since it is in the exclude path"
+        return
       end
 
       if !includelist.match?(caller_path)
-        puts "Excluding #{caller_path} since it is not in the include path"
+        # puts "Excluding #{caller_path} since it is not in the include path"
+        return
       end
       return if self == call.receiver
 
