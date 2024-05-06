@@ -58,7 +58,7 @@ class Rotoscope
       @pid = Process.pid
       @thread = Thread.current
 
-      @files = Set.new()
+      @files = []
       @test_file = nil
 
       if detailed
@@ -92,7 +92,7 @@ class Rotoscope
         printFilesSet()
         # Reset state
         @test_file = nil
-        @files = Set.new()
+        @files = []
       end
     end
 
@@ -149,7 +149,13 @@ class Rotoscope
 
     def log_call(call)
       caller_path = call.caller_path || ""
-      return if excludelist.match?(caller_path) || !includelist.match?(caller_path)
+      if excludelist.match?(caller_path)
+        puts "Excluding #{caller_path} since it is in the exclude path"
+      end
+
+      if !includelist.match?(caller_path)
+        puts "Excluding #{caller_path} since it is not in the include path"
+      end
       return if self == call.receiver
 
       if detailed
@@ -182,7 +188,10 @@ class Rotoscope
           caller_path = caller_path.sub(Regexp.new(prefix_to_exclude), "")
         end
         if @pid == Process.pid && @thread == Thread.current && !@test_file.nil?
-          @files.add(caller_path)
+          if caller_path == "/dashboard/domains/dispatch_rate_limiting/private/braze/msg_pipeline/dispatch_features/rate_limiting.rb"
+            puts "##### Adding #{caller_path} for #{@test_file}"
+          end
+          @files.push(caller_path)
         end
       end
     end
