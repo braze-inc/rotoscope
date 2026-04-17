@@ -149,7 +149,12 @@ class Rotoscope
 
     def log_call(call)
       caller_path = call.caller_path || ""
-      return if excludelist.match?(caller_path) || !includelist.match?(caller_path)
+      # Ruby 3: caller file can still be missing when rb_profile_frames surfaces
+      # only C frames (Shopify/rotoscope#87). Caller-path filters must not drop
+      # the event in that case or selective testing under-captures dependencies.
+      if !caller_path.empty?
+        return if excludelist.match?(caller_path) || !includelist.match?(caller_path)
+      end
       return if self == call.receiver
 
       if detailed
@@ -181,7 +186,8 @@ class Rotoscope
         if !prefix_to_exclude.nil?
           caller_path = caller_path.sub(Regexp.new(prefix_to_exclude), "")
         end
-        if @pid == Process.pid && @thread == Thread.current && !@test_file.nil?
+        if @pid == Process.pid && @thread == Thread.current && !@test_file.nil? &&
+            !caller_path.empty?
           @files.add(caller_path)
         end
       end
